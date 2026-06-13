@@ -1,0 +1,64 @@
+### Mac OS ###
+.DS_Store
+
+### Build and runtime ###
+!**/src/main/**/build/
+!**/src/main/**/target/
+!**/src/test/**/build/
+!**/src/test/**/target/
+.gradle
+.kotlin
+HELP.md
+build/
+target/
+
+### Maven ###
+!.mvn/wrapper/maven-wrapper.jar
+
+### Gradle ###
+!gradle/wrapper/gradle-wrapper.jar
+
+### IntelliJ IDEA ###
+.idea/
+.idea/compiler.xml
+.idea/jarRepositories.xml
+.idea/libraries/
+.idea/modules.xml
+*.iml
+*.ipr
+*.iws
+out/
+
+### Eclipse / STS ###
+.apt_generated
+.classpath
+.factorypath
+.project
+.settings
+.springBeans
+.sts4-cache
+
+### NetBeans ###
+/.nb-gradle/
+/dist/
+/nbbuild/
+/nbdist/
+/nbproject/private/
+
+### VS Code ###
+.vscode/
+
+### Android Studio ###
+.cxx
+.externalNativeBuild
+captures/
+local.properties
+
+### Package Files ###
+*.ear
+*.jar
+*.nar
+*.rar
+*.tar.gz
+*.war
+*.zip
