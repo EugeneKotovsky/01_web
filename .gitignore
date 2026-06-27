@@ -62,3 +62,10 @@ local.properties
 *.tar.gz
 *.war
 *.zip
+.clinerules/memory-bank.md
+memory_bank/activeContext.md
+memory_bank/productContext.md
+memory_bank/progress.md
+memory_bank/projectbrief.md
+memory_bank/systemPatterns.md
+memory_bank/techContext.md
