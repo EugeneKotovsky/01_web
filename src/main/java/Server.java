@@ -1,4 +1,3 @@
-
 import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
@@ -82,19 +81,20 @@ public class Server {
 
             Request request = new Request(method, path, headers, bodyStream);
 
-            Handler handler = getHandler(method, path);
+            // поиск handler'а по пути БЕЗ query-строки
+            Handler handler = getHandler(method, request.getPath());
             if (handler != null) {
                 handler.handle(request, out);
                 return;
             }
 
-            if (!validPaths.contains(path)) {
+            if (!validPaths.contains(request.getPath())) {
                 sendNotFound(out);
                 return;
             }
-            final Path filePath = Path.of("target/classes", path);
+            final Path filePath = Path.of("target/classes", request.getPath());
             final String mimeType = Files.probeContentType(filePath);
-            if (path.equals("/classic.html")) {
+            if (request.getPath().equals("/classic.html")) {
                 sendClassicPage(filePath, mimeType, out);
                 return;
             }

@@ -62,3 +62,5 @@ local.properties
 *.tar.gz
 *.war
 *.zip
+.clinerules/memory-bank.md
+memory_bank/
