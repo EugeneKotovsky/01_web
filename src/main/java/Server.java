@@ -1,7 +1,7 @@
-
 import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.LocalDateTime;
@@ -14,7 +14,7 @@ public class Server {
     private final int port;
     private final List<String> validPaths;
     private final ExecutorService threadPool;
-    private final Map<String, Map<String, Handler>> handlers; // method -> path -> handler
+    private final Map<String, Map<String, Handler>> handlers;
 
     public Server(int port, List<String> validPaths) {
         this.port = port;
@@ -44,40 +44,57 @@ public class Server {
 
     private void handleConnection(Socket clientSocket) {
         try (clientSocket;
-             BufferedReader in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
+             InputStream rawIn = clientSocket.getInputStream();
              BufferedOutputStream out = new BufferedOutputStream(clientSocket.getOutputStream())) {
 
-            // request line
-            final String requestLine = in.readLine();
-            if (requestLine == null) return;
-            final String[] parts = requestLine.split(" ");
-            if (parts.length != 3) return;
+            // читаем заголовки до \r\n\r\n (работаем с сырыми байтами)
+            ByteArrayOutputStream headerBuf = new ByteArrayOutputStream();
+            int crlfCount = 0;
+            int b;
+            while ((b = rawIn.read()) != -1) {
+                headerBuf.write(b);
+                if (b == '\r' || b == '\n') {
+                    crlfCount++;
+                } else {
+                    crlfCount = 0;
+                }
+                if (crlfCount == 4) break; // \r\n\r\n
+            }
 
+            String headerSection = headerBuf.toString(StandardCharsets.UTF_8);
+            String[] lines = headerSection.split("\r\n");
+
+            // request line
+            if (lines.length == 0) return;
+            final String[] parts = lines[0].split(" ");
+            if (parts.length != 3) return;
             final String method = parts[0];
             final String path = parts[1];
 
             // headers
             final Map<String, String> headers = new HashMap<>();
             int contentLength = 0;
-            String line;
-            while (!(line = in.readLine()).isEmpty()) {
-                String[] headerParts = line.split(": ", 2);
-                if (headerParts.length == 2) {
-                    headers.put(headerParts[0], headerParts[1]);
-                    if (headerParts[0].equalsIgnoreCase("Content-Length")) {
-                        contentLength = Integer.parseInt(headerParts[1]);
+            for (int i = 1; i < lines.length; i++) {
+                String[] hp = lines[i].split(": ", 2);
+                if (hp.length == 2) {
+                    headers.put(hp[0], hp[1]);
+                    if (hp[0].equalsIgnoreCase("Content-Length")) {
+                        contentLength = Integer.parseInt(hp[1].trim());
                     }
                 }
             }
 
-            // body
+            // body — читаем сырые байты
             InputStream bodyStream = null;
             if (contentLength > 0) {
-                char[] bodyChars = new char[contentLength];
-                int read = in.read(bodyChars, 0, contentLength);
-                if (read > 0) {
-                    bodyStream = new ByteArrayInputStream(new String(bodyChars, 0, read).getBytes());
+                byte[] bodyBytes = new byte[contentLength];
+                int totalRead = 0;
+                while (totalRead < contentLength) {
+                    int read = rawIn.read(bodyBytes, totalRead, contentLength - totalRead);
+                    if (read == -1) break;
+                    totalRead += read;
                 }
+                bodyStream = new ByteArrayInputStream(bodyBytes);
             }
 
             Request request = new Request(method, path, headers, bodyStream);
